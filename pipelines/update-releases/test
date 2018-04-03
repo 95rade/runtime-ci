@@ -1,0 +1,49 @@
+#!/bin/bash -eu
+
+old_job=$(mktemp)
+new_job=$(mktemp)
+releases="haproxy broker-registrar backup-and-restore-sdk nfs-volume binary-buildpack capi cf-app-sd cf-networking silk"
+releases=$(cat <<-END
+haproxy
+broker-registrar
+backup-and-restore-sdk
+nfs-volume
+binary-buildpack
+capi
+cf-app-sd
+cf-networking
+silk
+cf-smoke-tests
+cf-syslog-drain
+cflinuxfs2
+consul
+diego
+dotnet-core-buildpack
+garden-runc
+go-buildpack
+java-buildpack
+loggregator
+cf-mysql
+nats
+END
+)
+for r in $releases; do
+    set +e
+        if [ $r = "backup-and-restore-sdk" ]; then
+            bosh int ../update-releases.yml --path /jobs/name=update-bbr > $old_job
+            sed -i .bak 's/bbr/backup-and-restore-sdk/g' $old_job
+        else
+            bosh int ../update-releases.yml --path /jobs/name=update-$r > $old_job
+        fi
+        bosh int <(texplate execute template.yml -f input.yml) --path /jobs/name=update-$r > $new_job
+
+        diff_output=$(diff $old_job $new_job)
+        exit_code=$?
+    set -e
+
+    if [ $exit_code != 0 ]; then
+        echo "update-$r jobs have diverged: $diff_output"
+    else
+        echo "update-$r jobs are in sync"
+    fi
+done
