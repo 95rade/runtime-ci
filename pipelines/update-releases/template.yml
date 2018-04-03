@@ -243,3 +243,38 @@ jobs:
       rebase: true
       repository: updated-repo
 {{end}}
+{{range .windowsVersSupported}}
+- name: update-{{.name}}-stemcell
+  public: true
+  build_logs_to_retain: 100
+  plan:
+  - aggregate:
+    - get: runtime-ci
+    - get: cf-deployment-develop
+    - get: {{.name}}-stemcell
+      trigger: true
+      params:
+        tarball: false
+  - task: update-windows-stemcell-ops
+    file: runtime-ci/tasks/update-windows-stemcell-ops/task.yml
+    input_mapping:
+      ops-files: cf-deployment-develop
+{{if or (contains "windows2016" .name)}}
+      windows-stemcell: windows2016-stemcell
+    params:
+      USE_WINDOWS2016: true
+{{end}}
+  - task: commit-generated-manifest-and-ops
+    file: runtime-ci/tasks/commit-generated-manifest/task.yml
+    input_mapping:
+      repo: cf-deployment-develop
+      ops-file: updated-stemcell-ops-file
+      manifest: cf-deployment-develop
+    params:
+      OPS_FILE_NAME: {{.name}}-cell.yml
+      OPS_FILE_DESTINATION: operations/{{.name}}-cell.yml
+  - put: cf-deployment-develop
+    params:
+      rebase: true
+      repository: updated-repo
+{{end}}

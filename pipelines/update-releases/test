@@ -39,6 +39,8 @@ releases="haproxy
           staticfile-buildpack
           statsd-injector
           uaa
+          windows-stemcell
+          windows2016-stemcell
          "
 
 for r in $releases; do

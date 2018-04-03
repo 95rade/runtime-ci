@@ -77,3 +77,6 @@ opsReleases:
   repository: cloudfoundry/postgres-release
   cfDeploymentOpsFileDir: operations
   opsFile: use-postgres.yml
+windowsVersSupported:
+- name: windows
+- name: windows2016
