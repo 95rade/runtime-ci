@@ -128,6 +128,9 @@ jobs:
       vars-files: greengrass-env-director-state
     params:
       DEPLOYMENT_NAME_SUFFIX: {{.name}}
+{{if or (contains "routing" .name) (contains "uaa" .name)}}
+      OPS_FILES: "operations/experimental/enable-backup-restore.yml"
+{{end}}
       SYSTEM_DOMAIN: greengrass.cf-app.com
   - task: bosh-delete-deployment
     file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
