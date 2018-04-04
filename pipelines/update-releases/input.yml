@@ -41,11 +41,12 @@ baseReleases:
 - name: ruby-buildpack
   repository: cloudfoundry/ruby-buildpack-release
 - name: staticfile-buildpack
-  repository: cloudfoundry/static-buildpack-release
+  repository: cloudfoundry/staticfile-buildpack-release
 - name: statsd-injector
   repository: cloudfoundry/statsd-injector-release
 - name: uaa
   repository: cloudfoundry/uaa-release
+
 opsReleases:
 - name: backup-and-restore-sdk
   repository: cloudfoundry-incubator/backup-and-restore-sdk
@@ -77,6 +78,17 @@ opsReleases:
   repository: cloudfoundry/postgres-release
   cfDeploymentOpsFileDir: operations
   opsFile: use-postgres.yml
+- name: credhub
+  repository: pivotal-cf/credhub-release
+  cfDeploymentOpsFileDir: operations/experimental
+  opsFile: secure-service-credentials.yml
+  varsFilesInput: greengrass-env-director-state
+
 windowsVersSupported:
 - name: windows
 - name: windows2016
+
+extraBoshIOReleases:
+resources:
+- name: garden-windows-bosh-release
+  repository: cloudfoundry-incubator/garden-windows-bosh-release
