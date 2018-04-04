@@ -2130,7 +2130,6 @@ jobs:
       vars-files: greengrass-env-director-state
     params:
       DEPLOYMENT_NAME_SUFFIX: routing
-      OPS_FILES: "operations/experimental/enable-backup-restore.yml"
       SYSTEM_DOMAIN: greengrass.cf-app.com
   - task: bosh-delete-deployment
     file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
@@ -2407,7 +2406,6 @@ jobs:
       vars-files: greengrass-env-director-state
     params:
       DEPLOYMENT_NAME_SUFFIX: uaa
-      OPS_FILES: "operations/experimental/enable-backup-restore.yml"
       SYSTEM_DOMAIN: greengrass.cf-app.com
   - task: bosh-delete-deployment
     file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
@@ -3158,8 +3156,8 @@ jobs:
   - aggregate:
     - get: runtime-ci
     - get: cf-deployment-develop
-    - get: greengrass-env-director-state
     - get: cf-deployment-concourse-tasks
+    - get: greengrass-env-director-state
     - get: credhub-release
       trigger: true
       params:
