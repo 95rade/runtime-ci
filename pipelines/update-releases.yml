@@ -23,13 +23,13 @@ groups:
   - update-routing
   - update-ruby-buildpack
   - update-uaa
-  - update-cf-syslog-drain-release
+  - update-cf-syslog-drain
   - update-staticfile-buildpack
   - update-statsd-injector
   - update-java-buildpack
   # does not need compiling
   - update-syslog
-  - update-bbr
+  - update-backup-and-restore-sdk
   - update-bosh-dns
   - update-broker-registrar
   - update-cf-app-sd
@@ -92,7 +92,7 @@ resources:
   source:
     name: bosh-google-kvm-windows2016-go_agent
 
-- name: bbr-release
+- name: backup-and-restore-sdk-release
   type: bosh-io-release
   source:
     repository: cloudfoundry-incubator/backup-and-restore-sdk-release
@@ -461,7 +461,7 @@ jobs:
       rebase: true
       repository: updated-repo
 
-- name: update-bbr
+- name: update-backup-and-restore-sdk
   serial: true
   public: true
   build_logs_to_retain: 100
@@ -471,7 +471,7 @@ jobs:
     - get: cf-deployment-develop
     - get: cf-deployment-concourse-tasks
     - get: greengrass-env-director-state
-    - get: bbr-release
+    - get: backup-and-restore-sdk-release
       trigger: true
       params:
         tarball: false
@@ -479,10 +479,10 @@ jobs:
       params:
         tarball: false
       passed: [ update-stemcell-and-recompile-releases ]
-  - task: update-release-bbr
+  - task: update-release-backup-and-restore-sdk
     file: runtime-ci/tasks/update-single-release/task.yml
     input_mapping:
-      release: bbr-release
+      release: backup-and-restore-sdk-release
       deployment-configuration: cf-deployment-develop
       original-ops-file: cf-deployment-develop
     params:
@@ -498,7 +498,7 @@ jobs:
       ops-files: updated-ops-file
       vars-files: greengrass-env-director-state
     params:
-      DEPLOYMENT_NAME_SUFFIX: bbr
+      DEPLOYMENT_NAME_SUFFIX: backup-and-restore-sdk
       OPS_FILES: "enable-backup-restore.yml"
       SYSTEM_DOMAIN: greengrass.cf-app.com
   - task: bosh-delete-deployment
@@ -506,7 +506,7 @@ jobs:
     input_mapping:
       bbl-state: greengrass-env-director-state
     params:
-      DEPLOYMENT_NAME: cf-dry-run-bbr
+      DEPLOYMENT_NAME: cf-dry-run-backup-and-restore-sdk
   - task: commit-generated-manifest-and-ops
     file: runtime-ci/tasks/commit-generated-manifest/task.yml
     input_mapping:
@@ -3216,8 +3216,8 @@ jobs:
   - aggregate:
     - get: runtime-ci
     - get: cf-deployment-develop
-    - get: greengrass-env-director-state
     - get: cf-deployment-concourse-tasks
+    - get: greengrass-env-director-state
     - get: bosh-dns-release
       trigger: true
       params:
@@ -3318,8 +3318,8 @@ jobs:
   - aggregate:
     - get: runtime-ci
     - get: cf-deployment-develop
-    - get: greengrass-env-director-state
     - get: cf-deployment-concourse-tasks
+    - get: greengrass-env-director-state
     - get: syslog-release
       trigger: true
       params:
@@ -3350,8 +3350,7 @@ jobs:
       DEPLOYMENT_NAME_SUFFIX: syslog
       OPS_FILES: "enable-component-syslog.yml"
       SYSTEM_DOMAIN: greengrass.cf-app.com
-      VARS_FILES: |
-        operations/addons/example-vars-files/vars-enable-component-syslog.yml
+      VARS_FILES: operations/addons/example-vars-files/vars-enable-component-syslog.yml
   - task: bosh-delete-deployment
     file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
     input_mapping:
@@ -3380,8 +3379,8 @@ jobs:
   - aggregate:
     - get: runtime-ci
     - get: cf-deployment-develop
-    - get: greengrass-env-director-state
     - get: cf-deployment-concourse-tasks
+    - get: greengrass-env-director-state
     - get: bpm-release
       trigger: true
       params:

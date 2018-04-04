@@ -12,7 +12,7 @@ opt_test=""
 opt_gen=""
 opt_destroy=""
 opt_sort=""
-opt_pipeline_diff=""
+opt_psdiff=""
 
 while [[ "$#" > 0 ]]; do
     case $1 in
@@ -32,8 +32,8 @@ while [[ "$#" > 0 ]]; do
             opt_sort="true"
             shift
             ;;
-        --opt_pipeline_diff)
-            opt_pipeline_diff="true"
+        --opt_psdiff)
+            opt_psdiff="true"
             shift
             ;;
         *) break
@@ -47,52 +47,51 @@ if [ -n "${opt_test}" ]; then
 	# new_job=$(mktemp)
 	old_job=update-orig.yml
 	new_job=update-new.yml
-	releases=${releases:="haproxy
-	          broker-registrar
-	          backup-and-restore-sdk
-	          nfs-volume
-	          binary-buildpack
-	          capi
-	          cf-app-sd
-	          cf-networking
-	          silk
-	          cf-smoke-tests
-	          cf-syslog-drain
-	          cflinuxfs2
-	          consul
-	          diego
-	          dotnet-core-buildpack
-	          garden-runc
-	          go-buildpack
-	          java-buildpack
-	          loggregator
-	          cf-mysql
-	          nats
-	          nodejs-buildpack
-	          php-buildpack
-	          postgres
-	          python-buildpack
-	          routing
-	          ruby-buildpack
-	          staticfile-buildpack
-	          statsd-injector
-	          uaa
-	          windows-stemcell
-	          windows2016-stemcell
-	         "}
+	releases=${releases:="
+                          backup-and-restore-sdk
+                          bosh-dns
+                          bpm
+                          broker-registrar
+                          cf-app-sd
+                          credhub
+                          haproxy
+                          nfs-volume
+                          postgres
+                          silk
+                          syslog
+                          
+                          binary-buildpack
+                          capi
+                          cf-mysql
+                          cf-networking
+                          cf-smoke-tests
+                          cf-syslog-drain
+                          cflinuxfs2
+                          consul
+                          diego
+                          dotnet-core-buildpack
+                          garden-runc
+                          go-buildpack
+                          java-buildpack
+                          loggregator
+                          nats
+                          nodejs-buildpack
+                          php-buildpack
+                          python-buildpack
+                          routing
+                          ruby-buildpack
+                          staticfile-buildpack
+                          statsd-injector
+                          uaa
+                  
+                          windows-stemcell
+                          windows2016-stemcell
+                         "}
 
-    releases=credhub
 	for release in $releases; do
 	    set +e
-
-	        if [ $release = "backup-and-restore-sdk" ]; then
-	            bosh int ../update-releases.yml --path /jobs/name=update-bbr > $old_job
-	            sed -i .bak 's/bbr/backup-and-restore-sdk/g' $old_job
-	            rm -f $old_job.bak
-	        else
-                compare_path=/jobs/name=update-$release
-	            bosh int ../update-releases.yml --path ${compare_path} > $old_job
-	        fi
+            compare_path=/jobs/name=update-$release
+     	    bosh int ../update-releases.yml --path ${compare_path} > $old_job
 
             compare_path=/jobs/name=update-$release
 	        bosh int <(texplate execute template.yml --input-file input.yml) --path ${compare_path} > $new_job
@@ -122,6 +121,10 @@ elif [ -n "${opt_destroy}" ]; then
         destroy-pipeline \
         --pipeline=update-releases-gen \
         --non-interactive
+    fly --target glenda-ci \
+        destroy-pipeline \
+        --pipeline=update-releases-original \
+        --non-interactive
 elif [ -n "${opt_gen}" ]; then
     echo "Generate pipeline: update-releases-gen.yml"
 	texplate execute template.yml --input-file input.yml > update-releases-gen.yml
@@ -131,16 +134,28 @@ elif [ -n "${opt_gen}" ]; then
         --config=update-releases-gen.yml \
         --pipeline=update-releases-gen \
         --load-vars-from=$HOME/workspace/runtime-ci-private/pipeline_vars/update-releases.yml \
-        --non-interactive
-elif [ -n "${opt_pipeline_diff}" ]; then
-    fly380 --target relint-ci \
+        --non-interactive > /dev/null
+    echo "Set pipeline: ../update-releases.yml"
+    fly --target glenda-ci \
+        set-pipeline \
+        --config=../update-releases.yml \
+        --pipeline=update-releases-original \
+        --load-vars-from=$HOME/workspace/runtime-ci-private/pipeline_vars/update-releases.yml \
+        --non-interactive > /dev/null
+elif [ -n "${opt_psdiff}" ]; then
+    fly --target glenda-ci \
         get-pipeline \
-        --pipeline=update-releases \
+        --pipeline=update-releases-original \
         > update-releases-get-pipeline.yml
+    
+    sort update-releases-get-pipeline.yml > update-releases-get-pipeline.yml.sorted
+    
     fly --target glenda-ci \
         get-pipeline \
         --pipeline=update-releases-gen \
         > update-releases-gen-get-pipeline.yml
+    
+    sort update-releases-gen-get-pipeline.yml > update-releases-gen-get-pipeline.yml.sorted
 
     diff update-releases-get-pipeline.yml update-releases-gen-get-pipeline.yml
 
